@@ -1,5 +1,5 @@
 # Installation script for TacacsGUI
-There is no need to worry about dependencies, packages or librarias now. All you need is clear **Ubuntu 16.4.x**.
+There is no need to worry about dependencies, packages or libraries now. All you need is clear **Ubuntu 16.4.x**.
 I hope it will be intuitive for you and you will enjoy installation process.
 
 ## Requerements:
