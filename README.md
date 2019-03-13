@@ -1,9 +1,9 @@
 # Installation script for TacacsGUI
-There is no need to worry about dependencies, packages or libraries now. All you need is clear **Ubuntu 16.4.x**.
+There is no need to worry about dependencies, packages or libraries now. All you need is clear **Ubuntu 16.04.x**.
 I hope it will be intuitive for you and you will enjoy installation process.
 
 ## Requerements:
-1. **Ubuntu 16.4.x** (I will try to migrate to 18.4.x this year)
+1. **Ubuntu 16.04.x** (I will try to migrate to 18.04.x this year)
 2. **Pre-Installed LAMP Server and OpenSSH-Server**
 
 ## Script does three steps:
@@ -74,7 +74,7 @@ There are some checks on this step:
 8. Check Pip. I can't just pass by Python, hope it will take more places in the project. As in the previous checks it will be installed if you don't have it yet.
 9. Check Composer. If you don't have it yet or have old version, it will installed.
 10. Check root access to two files: */opt/tacacsgui/tac_plus.sh* and */opt/tacacsgui/main.sh*. Do you know how to use `sudo visudo`? Don't worry script will do that for you.
-11. Check Ubuntu version. Unfornunately, only *16.4.x* supported.
+11. Check Ubuntu version. Unfornunately, only *16.04.x* supported.
 
 Ok. That all. If you finally see menu of Step 3, it means Step 2 was finished successfully! :sunglasses:
 ### Step 3. Install Frameworks, Libraries, Web Interface and so on :hammer:
