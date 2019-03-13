@@ -17,7 +17,7 @@ I hope it will be intuitive for you and you will enjoy installation process.
 `cd ~; sudo rm -r tgui_install*; wget https://github.com/tacacsgui/tgui_install/archive/1.0.0.tar.gz`
 - Unpack and move to unpacked files:
 
-`tar -xvf 1.0.0.tar.gz -C ~/tgui_install/ --strip-components 1; cd ./tgui_install`
+`mkdir tgui_install; tar -xvf 1.0.0.tar.gz -C ~/tgui_install/ --strip-components 1; cd ./tgui_install`
 - Make it executable and run:
 
 `sudo chmod 755 ./tacacsgui.sh ; sudo ./tacacsgui.sh`
