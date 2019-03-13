@@ -90,17 +90,20 @@ ver. 1.0.0
 Start Installation
 Check database...
 Try to get root password to MySQL...Not Found
-Enter root password to mysql:
+Enter root password to mysql: 
 Done. Correct password
 Remember root password? (y/n): n
+Test existence of tgui database...tgui database was created
+Test existence of tgui_log database...tgui_log database was created
 ...
 bla bla bla, some boring stuff
 ...
 Tacacs Daemon setup...
-Test Daemon work...
-Done
-Final Check...Check main libraries...
-Done. Congratulation!
+tac_plus.service is not a native service, redirecting to systemd-sysv-install
+Executing /lib/systemd/systemd-sysv-install enable tac_plus
+Daemon apploaded
+Test Daemon work...Done
+Final Check...Check main libraries...Done. Congratulation!
 Press any key to exit...
 ```
 If you see the last three lines, like above, it is a time to check Web Interface!
