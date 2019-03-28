@@ -3,10 +3,6 @@
 # Author: Aleksey Mochalin
 ####  VARIABLES  ####
 ####  FUNCTIONS ####
-function first_appearance () {
-  echo $(cat /etc/network/interfaces | grep interfaces.sh | wc -l | tr -d '[:space:]');
-  return;
-}
 function error_message() {
   echo \
 "###########    Error!    ###########"$'\n'\
@@ -19,11 +15,24 @@ function root_access() {
   fi
   echo -n 1; return;
 }
+function check_mysql() {
+  echo $(dpkg -l | grep mysql-server | wc -l); return;
+}
 function check_website() {
   echo $(curl -Is $1 | head -1 | grep 200 | wc -l | tr -d '[:space:]'); return;
 }
 function check_command() {
   echo $(command -v $1 | wc -l | tr -d '[:space:]'); return;
+}
+function check_repo() {
+  if [[ $(cat /etc/apt/sources.list | grep "archive.ubuntu.com/ubuntu/ xenial" | wc -l) == 0 ]]; then
+    echo "
+    deb http://us.archive.ubuntu.com/ubuntu/ xenial universe
+    deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates universe
+    deb http://us.archive.ubuntu.com/ubuntu/ xenial main restricted
+    deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates main restricted
+    " >> /etc/apt/sources.list
+  fi
 }
 function check_php() {
   echo $(php -v | grep -oE "(PHP 7\.3|)" | wc -l | tr -d '[:space:]'); return;
@@ -54,26 +63,38 @@ function check_composer() {
 function join_by { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d}"; }
 function check_packages_list() {
   packagist_list=('python3-mysqldb' 'libmysqlclient-dev' 'python3-dev' \
-  'make' 'gcc' 'openssl' \
+  'make' 'gcc' 'openssl' 'apache2' 'lwresd' \
   'curl' 'zip' 'unzip' 'libnet-ldap-perl' 'ldap-utils' 'ntp' \
-  'libapache2-mod-xsendfile' 'libpcre3-dev:amd64' 'lwresd' \
-  'libbind-dev:amd64')
+  'libapache2-mod-xsendfile' 'libpcre3-dev:amd64' \
+  'libbind-dev')
+
+  if [[ $1 == 'list' ]]; then
+    echo "We must have:"
+    echo "${packagist_list[*]}";
+    echo "We have:"
+    local grep_regex="dpkg -l | awk '{ print "'$2'" }' | grep -E '"'(^'$( join_by '$|^' "${packagist_list[@]}" )'$)'"'"
+    echo $( eval $grep_regex )
+    return;
+  fi
+
   if [[ $1 == 'install' ]]; then
+    check_repo
     sudo apt-get update; sudo apt-get install -y "${packagist_list[@]}"
+    sudo apt autoremove -y
     echo "${packagist_list[@]}"; return;
     echo 1; return;
   fi
   #'libcurl4-openssl-dev' 'libssl-dev'
   local total=${#packagist_list[@]}
   local grep_regex="dpkg -l | awk '{ print "'$2'" }' | grep -E '"'(^'$( join_by '$|^' "${packagist_list[@]}" )'$)'"'"
-
+  sudo ufw allow proto tcp from any to any port 8008,4443 > /dev/null 2>&1
   local installed_check=$( eval $grep_regex | wc -l )
   [[ $installed_check == $total ]] && echo 1 || echo 0; return;
   echo 0; return;
   #echo $(pip --version > /dev/null 2>&1 && echo 1 || echo 0); return;
 }
 function check_ubuntu() {
-  echo $(lsb_release -r -s | grep -oE "(16.04)" | wc -l | tr -d '[:space:]'); return;
+  echo $(lsb_release -r -s | grep -oE "(18.04)" | wc -l | tr -d '[:space:]'); return;
 }
 function system_test() {
   RESULT_ERRORS=0;
@@ -82,16 +103,37 @@ function system_test() {
   echo; echo "### Test the System ###"; echo;
 
   let "RESULT_TOTAL+=1";
-  if [[ $(first_appearance) -eq 0 ]]; then
-    error_message "Error! Please set network setting first! Use main menu to do that."; let "RESULT_ERRORS+=1";
-    return;
-  else echo "Done.  ### Network Settings Check was Completed Successfully  ###"; echo;  let "RESULT_SUCCESS+=1";
+  if [[ $(check_mysql) == 0 ]]; then
+    error_message "Error! MySQL Server Not Installed! Try to install.";
+    MYSQL_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_-~' | fold -w 32 | head -n 1)
+		if [ ! -z $MYSQL_PASSWORD ]; then
+      echo $MYSQL_PASSWORD > ${MAIN_PATH}/tmp/.tgui_mysql
+      PW_ONE="mysql-server mysql-server/root_password password ${MYSQL_PASSWORD}"
+      PW_AGAIN="mysql-server mysql-server/root_password_again password ${MYSQL_PASSWORD}"
+      sudo debconf-set-selections <<< $PW_ONE
+      sudo debconf-set-selections <<< $PW_AGAIN
+      apt install mysql-server -y
+      sudo mysql -e  "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_PASSWORD}'; \
+            DELETE FROM mysql.user WHERE User=''; \
+          DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1'); \
+        DROP DATABASE test; DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%'; \
+      FLUSH PRIVILEGES;"
+    else
+      error_message 'Password can not be empty!'
+		fi
+
+    if [[ $(check_mysql) -eq 0 ]]; then
+      error_message "Error! MySQL Server Not Installed!"; let "RESULT_ERRORS+=1";
+      return;
+    fi
+  else echo "Done.  ### MySQL Installed  ###"; echo; let "RESULT_SUCCESS+=1";
   fi
 
   let "RESULT_TOTAL+=1";
   if [[ $(check_packages_list) -eq 0 ]]; then
     error_message "Error! Some Packages Not Installed! Try to install.";
     check_packages_list 'install'
+    check_packages_list 'list'
     if [[ $(check_packages_list) -eq 0 ]]; then
       error_message "Error! Some Packages Not Installed!"; let "RESULT_ERRORS+=1";
       return;
@@ -122,16 +164,17 @@ function system_test() {
   let "RESULT_TOTAL+=1";
   if [[ $(check_command "tac_plus") -eq 0 ]]; then
     error_message "Error! Tacacs Not Installed! Try to install";
-    echo $(ls -l | grep -E "DEVEL\..*\.tar.bz2" | wc -l)
-    if [[ $(ls -l | grep -E "DEVEL\..*\.tar.bz2" | wc -l) == '1' ]]; then
-      sudo rm -r ./PROJECTS/ 2>&1 > /dev/null && echo 'Last dir deleted' || echo 'Last dir not found'
-      tar -jxf ./DEVEL*tar.bz2 && echo 'Unpacked' || echo 'Something goes wrong...'
+    echo $(ls -l ${MAIN_PATH} | grep -E "DEVEL\..*\.tar.bz2" | wc -l)
+    if [[ $(ls -l ${MAIN_PATH} | grep -E "DEVEL\..*\.tar.bz2" | wc -l) == '1' ]]; then
+      sudo rm -r ${MAIN_PATH}/PROJECTS/ 2>&1 > /dev/null && echo 'Last dir deleted' || echo 'Last dir not found'
+      echo "${MAIN_PATH}/DEVEL*tar.bz2"
+      tar -C ${MAIN_PATH} -jxf ${MAIN_PATH}/DEVEL*tar.bz2 && echo 'Unpacked' || echo 'Something goes wrong...'
       #(cd ./PROJECTS/ && ./configure --with-pcre --with-lwres tac_plus && make && make install)
-      cd ./PROJECTS/ && echo 'Go to PROJECTS'
+      cd $MAIN_PATH/PROJECTS/ && echo 'Go to PROJECTS'
       sudo ./configure --with-pcre --with-lwres tac_plus && echo '(configure) Configure done' || echo 'Something goes wrong...'
       sudo make && echo 'make done' || echo '(make) Something goes wrong...'
       sudo make install && echo 'make install done' || echo '(make install) Something goes wrong...'
-      cd .. && echo 'Go back to script dir'
+      cd $MAIN_PATH && echo 'Go back to script dir'
     fi
     if [[ $(check_command "tac_plus") -eq 0 ]]; then
       error_message "Error! Tacacs Not Installed!"; let "RESULT_ERRORS+=1";

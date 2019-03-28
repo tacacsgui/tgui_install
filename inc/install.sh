@@ -5,25 +5,38 @@ clear;
 ####  VARIABLES  ####
 #ROOT_PATH="/opt/tacacsgui"
 ####  FUNCTIONS ####
-source "$PWD/inc/src/map.sh";
+if [[ ! -z $1 ]]; then
+	MAIN_PATH=$1
+else
+	MAIN_PATH=$PWD
+fi
+
+source "$MAIN_PATH/inc/src/map.sh";
+echo $FUN_GENERAL
+# echo $MAIN_PATH
 source "$FUN_GENERAL";
 source "$FUN_IFACE";
 source "$FUN_INSTALL";
-if [ $# -eq 0 ]; then
-	SCRIPT_VER="1.0.0";
+#if [ $# -eq 0 ]; then
+	SCRIPT_VER="2.0.0";
 	echo $'\n'\
 "###############################################################"$'\n'\
 "##############   TACACSGUI Installation    #########"$'\n'\
 "###############################################################"$'\n'$'\n'"ver. ${SCRIPT_VER}"$'\n'$'\n'\
 
 	echo 'Start Installation';
-
+	SILENT='0'
+	if [[ ! -z $2 ]] && [[ $2 == 'silent' ]]; then
+		echo 'Silent installation detected!'
+		SILENT='1'
+	fi
 	###CHECK DATABASE###
 	echo 'Check database...';
 	###CHECK ROOT PASSWORD###
 	while true; do
+		REMEMBER_ROOT_PASSWD=0
 		if [[ -z $MYSQL_ROOT_TRY ]]; then
-			MYSQL_ROOT_TRY=0
+			MYSQL_ROOT_TRY='0'
 		fi
 		if [[ $MYSQL_ROOT_TRY -eq 0 ]]; then
 			echo -n "Try to get root password to MySQL...";
@@ -40,25 +53,43 @@ if [ $# -eq 0 ]; then
 			else
 				echo "Not Found";
 			fi
+			echo -n 'Try to get from fresh install...';
+			if [[ -f ${MAIN_PATH}/tmp/.tgui_mysql ]]; then
+				echo -n "Verify...";
+				echo "cat ${MAIN_PATH}/tmp/.tgui_mysql"
+				MYSQL_PASSWORD=$( cat ${MAIN_PATH}/tmp/.tgui_mysql );
+				if [[ $(check_mysql_root $MYSQL_PASSWORD) -ne 0 ]]
+				then
+					REMEMBER_ROOT_PASSWD='1'
+					echo "Success";
+				else
+					echo "Password Found, BUT INCORRECT!";
+				fi
+			fi
 			MYSQL_ROOT_TRY=1;
 		fi
-
-		echo -n 'Enter root password to mysql: ';
-		stty -echo; read MYSQL_PASSWORD; stty echo; echo;
-		if [[ $(check_mysql_root $MYSQL_PASSWORD) -eq 0 ]]
-		then
-			error_message 'Incorrect MYSQL root password! Exit.'
-			echo; echo -n 'Try one more time? (y/n): '; read DECISION;
-			if [ "$DECISION" == "${DECISION#[Yy]}" ]; then
-				read -n 1 -s -r -p "Press any key to exit...";
-				exit 0;
-			else
-				continue;
+		if [[ $REMEMBER_ROOT_PASSWD == '0' ]]; then
+			echo -n 'Enter root password to mysql: ';
+			stty -echo; read MYSQL_PASSWORD; stty echo; echo;
+			if [[ $(check_mysql_root $MYSQL_PASSWORD) -eq 0 ]]
+			then
+				error_message 'Incorrect MYSQL root password! Exit.'
+				echo; echo -n 'Try one more time? (y/n): '; read DECISION;
+				if [ "$DECISION" == "${DECISION#[Yy]}" ]; then
+					read -n 1 -s -r -p "Press any key to exit...";
+					exit 0;
+				else
+					continue;
+				fi
 			fi
-		fi
-		echo 'Done. Correct password'
-		echo -n 'Remember root password? (y/n): '; read DECISION;
-		if [ "$DECISION" != "${DECISION#[Yy]}" ]; then
+			echo 'Done. Correct password'
+
+			echo -n 'Remember root password? (y/n): '; read DECISION;
+			if [ "$DECISION" != "${DECISION#[Yy]}" ]; then
+				REMEMBER_PASSWD=$MYSQL_PASSWORD;
+				echo "Root Password Saved";
+			fi
+		else
 			REMEMBER_PASSWD=$MYSQL_PASSWORD;
 			echo "Root Password Saved";
 		fi
@@ -109,54 +140,60 @@ echo "
 ";
 	echo "Check existence of tgui_user. "
 	if [ $(check_mysql_user_existence $MYSQL_PASSWORD tgui_user) -eq 0 ]; then
-		echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
-		stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
-		if [ -z "$MYSQL_USER_PASSWORD" ]; then
-			echo 'Root password is used'
-			MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
-		fi
+		# echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
+		# stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
+		# if [ -z "$MYSQL_USER_PASSWORD" ]; then
+		# 	echo 'Root password is used'
+		# 	MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
+		# fi
+			MYSQL_USER_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_-~' | fold -w 32 | head -n 1)
 			#SHOW GRANTS FOR 'tgui_user'@'localhost';
 			echo "GRANT ALL ON tgui.* TO 'tgui_user'@'localhost' IDENTIFIED BY '${MYSQL_USER_PASSWORD}';" | mysql -uroot -p${MYSQL_PASSWORD} 2>/dev/null
 			echo "GRANT ALL ON tgui_log.* TO 'tgui_user'@'localhost' IDENTIFIED BY '${MYSQL_USER_PASSWORD}';" | mysql -uroot -p${MYSQL_PASSWORD} 2>/dev/null
 			echo 'MYSQL user tgui_user was created'
 	else
 		echo 'Already created'
-		echo -n "It seems like you already have installed version. Do you want to continue? [y/n]: "; read DECISION;
-		if [ "$DECISION" == "${DECISION#[Yy]}" ]; then
-			read -n 1 -s -r -p "Press any key to exit...";
-			exit 0;
+		if [[ SILENT == '0' ]]; then
+			echo -n "It seems like you already have installed version. Do you want to continue? [y/n]: "; read DECISION;
+			if [ "$DECISION" == "${DECISION#[Yy]}" ]; then
+				read -n 1 -s -r -p "Press any key to exit...";
+				exit 0;
+			fi
 		fi
 		if [ -f /opt/tacacsgui/web/api/config.php ]; then
 			cp /opt/tacacsgui/web/api/config.php /tmp/config.php
+			MYSQL_USER_PASSWORD=$(php -r 'include "/opt/tacacsgui/web/api/config.php"; echo DB_PASSWORD;')
 			echo "Old configuration saved (/tmp/config.php)";
-			if [ -z "$MYSQL_USER_PASSWORD" ]; then
-				MYSQL_USER_PASSWORD=$( cat /opt/tacacsgui/web/api/config.php 2>/dev/null | grep -o -P "(?<=DB_PASSWORD',\s').*(?='\);)" );
-				if [ -z "$MYSQL_USER_PASSWORD" ]; then
-					echo; echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
-					stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
-					if [ -z "$MYSQL_USER_PASSWORD" ]; then
-						echo 'Root password is used... '
-						MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
-					fi
-				fi
-			fi
+			# if [ -z "$MYSQL_USER_PASSWORD" ]; then
+			# 	MYSQL_USER_PASSWORD=$( cat /opt/tacacsgui/web/api/config.php 2>/dev/null | grep -o -P "(?<=DB_PASSWORD',\s').*(?='\);)" );
+			# 	if [ -z "$MYSQL_USER_PASSWORD" ]; then
+			# 		MYSQL_USER_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_-~' | fold -w 32 | head -n 1)
+			# 		# echo; echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
+			# 		# stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
+			# 		# if [ -z "$MYSQL_USER_PASSWORD" ]; then
+			# 		# 	echo 'Root password is used... '
+			# 		# 	MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
+			# 		# fi
+			# 	fi
+			# fi
 			echo 'Database user password was saved'
 		fi
 	fi
 	echo -n "Check User Grants...";
 
 	if [ $(check_mysql_user_grants $MYSQL_PASSWORD tgui_user tgui) -eq 0 ]; then
-		if [ -z "$MYSQL_USER_PASSWORD" ]; then
-			MYSQL_USER_PASSWORD=$( cat /opt/tacacsgui/web/api/config.php 2>/dev/null | grep -o -P "(?<=DB_PASSWORD',\s').*(?='\);)" );
-			if [ -z "$MYSQL_USER_PASSWORD" ]; then
-				echo; echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
-				stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
-				if [ -z "$MYSQL_USER_PASSWORD" ]; then
-					echo 'Root password is used... '
-					MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
-				fi
-			fi
-		fi
+		# if [ -z "$MYSQL_USER_PASSWORD" ]; then
+		# 	MYSQL_USER_PASSWORD=$( cat /opt/tacacsgui/web/api/config.php 2>/dev/null | grep -o -P "(?<=DB_PASSWORD',\s').*(?='\);)" );
+		# 	if [ -z "$MYSQL_USER_PASSWORD" ]; then
+		# 		MYSQL_USER_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_-~' | fold -w 32 | head -n 1)
+		# 		# echo; echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
+		# 		# stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
+		# 		# if [ -z "$MYSQL_USER_PASSWORD" ]; then
+		# 		# 	echo 'Root password is used... '
+		# 		# 	MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
+		# 		# fi
+		# 	fi
+		# fi
 		echo "GRANT ALL ON tgui.* TO 'tgui_user'@'localhost' IDENTIFIED BY '${MYSQL_USER_PASSWORD}';" | mysql -uroot -p${MYSQL_PASSWORD} 2>/dev/null;
 		echo -n "Added for DB tgui..."
 	fi
@@ -164,12 +201,13 @@ echo "
 		if [ -z "$MYSQL_USER_PASSWORD" ]; then
 			MYSQL_USER_PASSWORD=$( cat /opt/tacacsgui/web/api/config.php 2>/dev/null | grep -o -P "(?<=DB_PASSWORD',\s').*(?='\);)" );
 			if [ -z "$MYSQL_USER_PASSWORD" ]; then
-				echo; echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
-				stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
-				if [ -z "$MYSQL_USER_PASSWORD" ]; then
-					echo 'Root password is used... '
-					MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
-				fi
+				MYSQL_USER_PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_-~' | fold -w 32 | head -n 1)
+				# echo; echo -n 'Enter password to tgui_user (if empty, root passwd will be used): ';
+				# stty -echo; read MYSQL_USER_PASSWORD; stty echo; echo;
+				# if [ -z "$MYSQL_USER_PASSWORD" ]; then
+				# 	echo 'Root password is used... '
+				# 	MYSQL_USER_PASSWORD=$MYSQL_PASSWORD
+				# fi
 			fi
 		fi
 		echo "GRANT ALL ON tgui_log.* TO 'tgui_user'@'localhost' IDENTIFIED BY '${MYSQL_USER_PASSWORD}';" | mysql -uroot -p${MYSQL_PASSWORD} 2>/dev/null;
@@ -198,12 +236,13 @@ echo "
 		echo "... Already Created";
 	fi
 	chown www-data:www-data -R /opt/tacacsgui
-	if [ $(ls -la /opt/tacacsgui/ | wc -l) -gt 3 ]
-	then
-		echo -n "Directory /opt/tacacsgui doesn't empty. Delete all files? (if no, script exit) [y/n]: "; read DECISION;
-		if [ "$DECISION" == "${DECISION#[Yy]}" ]; then
-			read -n 1 -s -r -p "Press any key to exit...";
-			exit 0;
+	if [ $(ls -la /opt/tacacsgui/ | wc -l) -gt 3 ]; then
+		if [[ SILENT == '0' ]]; then
+			echo -n "Directory /opt/tacacsgui doesn't empty. Delete all files? (if no, script exit) [y/n]: "; read DECISION;
+			if [ "$DECISION" == "${DECISION#[Yy]}" ]; then
+				read -n 1 -s -r -p "Press any key to exit...";
+				exit 0;
+			fi
 		fi
 		if [ -f '/opt/tacacsgui/tac_plus.cfg' ]; then
 			cp /opt/tacacsgui/tac_plus.cfg /tmp/tac_plus.cfg
@@ -318,7 +357,7 @@ echo "
 			exit 0;
 		fi
 		service tac_plus stop
-		echo -n > /opt/tacacsgui/tac_plus.cfg;
+		#echo -n > /opt/tacacsgui/tac_plus.cfg;
 	else
 		echo -n "Already running..."
 	fi
@@ -410,8 +449,12 @@ echo "
 		exit 0;
 	fi
 
+	if [[ -f ${MAIN_PATH}/tmp/.tgui_mysql ]]; then
+		rm ${MAIN_PATH}/tmp/.tgui_mysql
+	fi
+
 	echo "Done. Congratulation!"
 
 	read -n 1 -s -r -p "Press any key to exit...";
 	exit 0;
-fi
+#fi

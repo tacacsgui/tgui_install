@@ -1,2 +1,4 @@
 log/*
 tmp/*
+!log/.ignore
+!tmp/.ignore

@@ -1,15 +1,14 @@
 # Installation script for TacacsGUI
-There is no need to worry about dependencies, packages or libraries now. All you need is clear **Ubuntu 16.04.x**.
+There is no need to worry about dependencies, packages or libraries now. All you need is clear **Ubuntu 18.04.x**.
 I hope it will be intuitive for you and you will enjoy installation process.
 
 ## Requerements:
-1. **Ubuntu 16.04.x** (I will try to migrate to 18.04.x this year)
-2. **Pre-Installed LAMP Server and OpenSSH-Server**
+1. Clear **Ubuntu 18.04.x** (you can download iso here)
 
 ## Script does three steps:
-1. **Set Interface Settings** (you have to do that only once)
-2. **Install Dependencies**
-3. **Install Frameworks, Libraries, Web Interface and so on**
+1. (Optional) **Set Interface Settings** (you have to do that only once)
+2. **Install Dependencies** (! Internet Required !)
+3. **Install Frameworks, Libraries, Web Interface and so on** (! Internet Required !)
 
 ## Prepare and run your script
 - Move to home, delete old data (if it is) and download latest release (or just copy/past):
@@ -90,7 +89,7 @@ ver. 1.0.0
 Start Installation
 Check database...
 Try to get root password to MySQL...Not Found
-Enter root password to mysql: 
+Enter root password to mysql:
 Done. Correct password
 Remember root password? (y/n): n
 Test existence of tgui database...tgui database was created

@@ -5,12 +5,28 @@ clear;
 ####  VARIABLES  ####
 ####
 ####  FUNCTIONS ####
-source "$PWD/inc/src/map.sh";
+#MAIN_PATH="`dirname \"$0\"`"
+MAIN_PATH=$( dirname $(realpath "$0") )
+source "$MAIN_PATH/inc/src/map.sh";
 source "$FUN_GENERAL";
+
 ####  FUNCTIONS ####  END
 #redirect_outputs_to_logfile $LOG_FILE;
 
-SCRIPT_VER="1.0.0";
+#Silent Installation###
+if [[ ! -z $1 ]] && [[ $1 == 'silent' ]]; then
+  echo 'Silent installation'
+  system_test "installation";
+  if [[ $RESULT_ERRORS != '0' ]]; then
+    error_message "Error was Found. Installation Stop!";
+    exit 0
+  fi
+  echo 'No errors found'
+  $INSTALL_SCRIPT_PATH $MAIN_PATH "silent";
+  exit 0
+fi
+
+SCRIPT_VER="2.0.0";
 echo $'\n'\
 "###############################################################"$'\n'\
 "##############   TACACSGUI Installation Script    ##############"$'\n'\
@@ -29,7 +45,7 @@ do
               error_message "Error was Found. Installation Stop!";
               continue;
             fi
-            ./$INSTALL_SCRIPT_PATH;
+            $INSTALL_SCRIPT_PATH $MAIN_PATH;
             THIS_SCRIPT=$(readlink -f "$0");
             exec $THIS_SCRIPT;
             ;;
@@ -40,12 +56,13 @@ do
               error_message "Error was Found. Installation Stop!";
               continue;
             fi
-            ./$INSTALL_SCRIPT_PATH;
+            $INSTALL_SCRIPT_PATH $MAIN_PATH;
             THIS_SCRIPT=$(readlink -f "$0");
             exec $THIS_SCRIPT;
             ;;
         "Network Settings")
-            ./$NET_SCRIPT_PATH;
+            echo $NET_SCRIPT_PATH;
+            $NET_SCRIPT_PATH $MAIN_PATH;
             THIS_SCRIPT=$(readlink -f "$0");
             exec $THIS_SCRIPT;
             ;;
