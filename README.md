@@ -13,13 +13,20 @@ I hope it will be intuitive for you and you will enjoy installation process.
 ## Prepare and run your script
 - Move to home, delete old data (if it is) and download latest release (or just copy/past):
 
-`cd ~; sudo rm -r tgui_install*; wget https://github.com/tacacsgui/tgui_install/archive/1.0.0.tar.gz`
+`cd ~; sudo rm -r tgui_install*; wget https://github.com/tacacsgui/tgui_install/archive/tgui_install.tar.gz`
 - Unpack and move to unpacked files:
 
-`mkdir tgui_install; tar -xvf 1.0.0.tar.gz -C ~/tgui_install/ --strip-components 1; cd ./tgui_install`
+`mkdir tgui_install; tar -xvf tgui_install.tar.gz -C ~/tgui_install/ --strip-components 1; cd ./tgui_install`
 - Make it executable and run:
 
 `sudo chmod 755 ./tacacsgui.sh ; sudo ./tacacsgui.sh`
+# OR
+`sudo chmod 755 ./tacacsgui.sh ; sudo ./tacacsgui.sh silent`
+
+**silent** run fast installation process.
+
+
+
 
 ### Step 1. Set Interface Settings :satellite:
 If it is you first installation, you have to prepare network interface for communication.
