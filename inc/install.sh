@@ -264,7 +264,7 @@ echo "
 	sudo -u  www-data composer install -d /opt/tacacsgui/web/api
 	echo "Download python libraries..."
 	umask 022
-	sudo pip install sqlalchemy alembic mysqlclient pexpect pyyaml argparse pyotp
+	sudo pip install sqlalchemy alembic mysqlclient pexpect pyyaml argparse pyotp gitpython
 	echo "Update python libraries..."
 	python3 -m pip list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | while read line; do \
 			if [[ $line == 'pycurl' ]] || [[ $line == 'pygobject' ]]; then
