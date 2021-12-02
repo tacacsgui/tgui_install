@@ -45,16 +45,19 @@ function where_is_my_little_root() {
 }
 
 function check_composer() {
+  # echo "Debug 0: "
   if [[ $1 == 'install' ]]; then
     curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
     sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
     echo 1; return;
   fi
-  installed=$(composer --version > /dev/null 2>&1 && echo 1 || echo 0)
+  # echo "Debug 1: " $( echo -ne '\n' | composer --version > /dev/null 2>&1 && echo 1 || echo 0)
+  installed=$( echo -ne '\n' | composer --version > /dev/null 2>&1 && echo 1 || echo 0)
   if [[ $installed == '0' ]]; then
     echo $installed; return;
   fi
-  if [[ $(composer -V | grep '1.0.0' | wc -l) == '1' ]]; then
+  # echo "Debug 2: " $( echo -ne '\n' | composer -V | grep '1.0.0' | wc -l)
+  if [[ $( echo -ne '\n' | composer -V | grep '1.0.0' | wc -l) == '1' ]]; then
     sudo apt-get remove composer -y > /dev/null 2>&1
     echo '0'; return
   fi
@@ -217,6 +220,7 @@ function system_test() {
   fi
 
   let "RESULT_TOTAL+=1";
+  echo "Check Composer ..."
   if [[ $(check_composer) -eq 0 ]]; then
     error_message "Error! Composer Not Installed! Try to install.";
     check_composer 'install'
