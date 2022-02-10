@@ -175,7 +175,7 @@ function system_test() {
       tar -C ${MAIN_PATH} -jxf ${MAIN_PATH}/DEVEL*tar.bz2 && echo 'Unpacked' || echo 'Something goes wrong...'
       #(cd ./PROJECTS/ && ./configure --with-pcre --with-lwres tac_plus && make && make install)
       cd $MAIN_PATH/PROJECTS/ && echo 'Go to PROJECTS'
-      sudo ./configure --with-pcre --with-lwres tac_plus && echo '(configure) Configure done' || echo 'Something goes wrong...'
+      sudo ./configure --with-pcre tac_plus && echo '(configure) Configure done' || echo 'Something goes wrong...'
       sudo make && echo 'make done' || echo '(make) Something goes wrong...'
       sudo make install && echo 'make install done' || echo '(make install) Something goes wrong...'
       cd $MAIN_PATH && echo 'Go back to script dir'
