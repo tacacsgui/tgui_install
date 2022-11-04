@@ -81,7 +81,7 @@ function check_packages_list() {
   fi
 
   if [[ $1 == 'install' ]]; then
-    check_repo
+    #check_repo #check_repo disabled because the author only included link to us based servers hardlinked for Ubuntu 18.04 only. 
     sudo apt-get update; sudo apt-get install -y "${packagist_list[@]}"
     sudo apt autoremove -y
     echo "${packagist_list[@]}"; return;

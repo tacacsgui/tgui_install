@@ -1,13 +1,13 @@
 # Installation script for TacacsGUI
-There is no need to worry about dependencies, packages or libraries now. All you need is clear **Ubuntu 18.04.x**.
+There is no need to worry about dependencies, packages or libraries now. All you need is clear **Ubuntu 20.04.x**.
 I hope it will be intuitive for you and you will enjoy installation process.
 
 ## Requerements:
-1. Clear **Ubuntu 18.04.x** (you can download iso here)
+1. Clear **Ubuntu 20.04.x** (I personally recommend that the ISO be downloaded from Ubuntu's official cd mirrors. )
 
 ## Script does three steps:
 1. (Optional) **Set Interface Settings** (you have to do that only once)
-2. **Install Dependencies** (! Internet Required !)
+2. **Install Dependencies** (! Internet Required !) #Corrections made to the installer script to ensure that the install goes smooth on Ubuntu 20.04.#
 3. **Install Frameworks, Libraries, Web Interface and so on** (! Internet Required !)
 
 ## Prepare and run your script
@@ -119,7 +119,7 @@ There are two ways:
 
 After installation I recommend to upgrade your system, use command `sudo apt-get full-upgrade -y` for that.
 
-Hope you will enjoy installation process and you does not meet any trouble.
+Hope you will enjoy installation process and you does not meet any trouble. Although I have edited some parts of the installation script, I'd rather you donate to Aleksey. 
 If you want to help, you are welcome! Also you can be my Patron [on Patreon](https://www.patreon.com/tacacsgui), you can stimulate me do updates more often.
 # [<img src="https://tacacsgui.com/wp-content/uploads/2018/11/1000px-Patreon_logo_with_wordmark.png" width="40%">](https://www.patreon.com/tacacsgui)
 
