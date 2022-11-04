@@ -31,7 +31,7 @@ function check_repo() {
     deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates universe
     deb http://us.archive.ubuntu.com/ubuntu/ xenial main restricted
     deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates main restricted
-    " >> /etc/apt/sources.list
+    " | sudo tee -a /etc/apt/sources.list
   fi
 }
 function check_php() {
@@ -69,7 +69,7 @@ function check_packages_list() {
   'make' 'gcc' 'openssl' 'apache2' 'lwresd' \
   'curl' 'zip' 'unzip' 'libnet-ldap-perl' 'ldap-utils' 'ntp' \
   'libapache2-mod-xsendfile' 'libpcre3-dev:amd64' \
-  'libbind-dev')
+  'libbind-dev' 'git')
 
   if [[ $1 == 'list' ]]; then
     echo "We must have:"
@@ -116,7 +116,7 @@ function system_test() {
       PW_AGAIN="mysql-server mysql-server/root_password_again password ${MYSQL_PASSWORD}"
       sudo debconf-set-selections <<< $PW_ONE
       sudo debconf-set-selections <<< $PW_AGAIN
-      apt install mysql-server -y
+      sudo apt install mysql-server -y
       sudo mysql -e  "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_PASSWORD}'; \
             DELETE FROM mysql.user WHERE User=''; \
           DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1'); \
@@ -191,7 +191,7 @@ function system_test() {
   if [[ $(check_php) -eq 0 ]]; then
     error_message "Error! PHP 7.3 Not Installed! Try to install.";
     if [[ $(sudo apt-cache search php7.3 | wc -l) == 0 ]]; then
-    	sudo apt-get install python-software-properties -y
+    	sudo apt-get install software-properties-common -y
     	sudo add-apt-repository ppa:ondrej/php -y
     	sudo apt-get update
     fi
